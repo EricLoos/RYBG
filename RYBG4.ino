@@ -249,6 +249,8 @@ void loop() {
     strip.setPixelColor(4,bounce%5,10,10,10);
     strip.show();
     bounce++;
+    if(bounce<0)
+      bounce=0;    
   }
   /*
   if(millis()>heartbeat1) {
