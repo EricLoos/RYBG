@@ -239,6 +239,39 @@ int GetInt(int f, int l ) {
   return r;
 }
 
+// The row is 0 through 4 and bits are RYBG but LEDs show GBYR.
+void SetRow( int row, int bits ) {
+  int r,g,b;
+  int bit = 1;
+  bool changed = false;
+  for(int x = 0; x<4; x++) {
+    if( (bits & bit ) != 0 ) {
+      switch(x) {
+        case 0: // green
+          g=50; r=0; b=0;
+          break;
+          
+        case 1: // blue
+          r=0; g=0; b=50;
+          break;
+          
+        case 2: // yel
+          r=50; g=50; b=0;
+          break;
+          
+        case 3: // red
+          r=50; g=0; b=0;
+          break;
+      }
+      strip.setPixelColor(x,row,r,g,b);
+      changed = true;
+    }
+    bit = bit << 1;
+  }
+  if(changed)
+    strip.show();
+}
+
 int bounce = 0;
 
 void loop() {
@@ -250,7 +283,7 @@ void loop() {
     strip.show();
     bounce++;
     if(bounce<0)
-      bounce=0;    
+      bounce=0;
   }
   /*
   if(millis()>heartbeat1) {
