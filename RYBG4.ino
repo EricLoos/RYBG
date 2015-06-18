@@ -50,6 +50,7 @@ bool heartbeat = false;
 
 void setup() {
   strip.begin();
+  SetRow(4,15);
   strip.show();
   heartbeat = false;
   heartbeat1 = millis()+1000UL;
@@ -245,6 +246,7 @@ void SetRow( int row, int bits ) {
   int bit = 1;
   bool changed = false;
   for(int x = 0; x<4; x++) {
+    strip.setPixelColor(x,row,0,0,0);
     if( (bits & bit ) != 0 ) {
       switch(x) {
         case 0: // green
@@ -276,12 +278,14 @@ int bounce = 0;
 
 void loop() {
   if(millis()>heartbeat1) {
-    heartbeat1 = millis()+550UL;
+    heartbeat1 = millis()+350UL;
     for(int i=0;i<5; i++)
       strip.setPixelColor(4,i,0,0,0);
     strip.setPixelColor(4,bounce%5,10,10,10);
     strip.show();
     bounce++;
+    if(bounce>100)
+      SetRow(4,0);
     if(bounce<0)
       bounce=0;
   }
@@ -338,6 +342,7 @@ void loop() {
   
   if(done) {
     bits = SetLightFromBuffer();
+    SetRow(3,CorrectBits(bits));
     if(bits>=0) {
       Millis12 = millis()+12*60*1000UL;
       fillCircles(bits,ILI9341_WHITE);
@@ -419,7 +424,18 @@ void loop() {
       Draw7SegementDigits(10,60,tft.width()*0.75,40,leds,ILI9341_WHITE,true);
     }
   }
+}
 
+// GYR ----> RYBG
+int CorrectBits( int bits ) {
+  int r = 0;
+  if((bits & 4)!=0)
+    r+=1;
+  if((bits & 2) != 0)
+    r+=4;
+  if((bits & 1) != 0 )
+    r+=8;
+  return r; 
 }
 /*
 void Draw7SegementDigits2 ( int16_t x, int16_t y, int16_t w, int16_t h, char *s, int16_t c, bool ClearFirst ) {
