@@ -78,6 +78,10 @@ void setup() {
   tft.setTextSize(3);
   tft.println("Heimdall"); 
   Serial.println("Setup complete.");
+  tft.setTextSize(1);
+  tft.setTextColor(ILI9341_WHITE);
+  tft.setCursor(0,280); 
+  tft.print("NoBomma Countdown Clock!"); 
 }
 unsigned long testFillScreen() {
   unsigned long start = micros();
@@ -170,10 +174,11 @@ void fillCircles(int bits,uint16_t borderColor) {
     tft.drawCircle(x3,y3,r-j,borderColor);
   //tft.drawCircle(x3,y3,r-1,borderColor);
   tft.setTextColor(ILI9341_BLACK);
-  tft.setCursor(10,10);
+  tft.setCursor(0,10);
   tft.setTextColor(borderColor);
   tft.setTextSize(1);
-  tft.println("HFD Replication Status");  
+  tft.println("HFD Replication Status"); 
+
   strip.show();
 }
 int testBits = 1;
@@ -289,10 +294,14 @@ time_t tmConvert_t(int YYYY, byte MM, byte DD, byte hh, byte mm, byte ss  )
 
 
 int bounce = 0;
+int lastMinutes = -1;
+unsigned long _lastMinutes = 0UL;
+int nobommaY = 170;
+int smallDateTimeY = 40;
 
 void loop() {
   if(millis()>heartbeat1) {
-    heartbeat1 = millis()+450UL;
+    heartbeat1 = millis()+550UL;
     for(int i=0;i<5; i++)
       strip.setPixelColor(4,i,0,0,0);
     strip.setPixelColor(4,bounce%5,10,10,10);
@@ -356,8 +365,9 @@ void loop() {
   
   if(done) {
     bits = SetLightFromBuffer();
-    SetRow(3,CorrectBits(bits));
+    
     if(bits>=0) {
+      SetRow(3,CorrectBits(bits));
       Millis12 = millis()+12*60*1000UL;
       fillCircles(bits,ILI9341_WHITE);
       // Set last sync time
@@ -402,14 +412,20 @@ void loop() {
       } 
       else
         tft.fillRect(10,50,w/2,25,ILI9341_BLACK);    */
-      tft.fillRect(0,50,w/2,10,ILI9341_BLACK);
+      if(lastMinutes==minute()) {
+        tft.fillRect(45,smallDateTimeY,20,10,ILI9341_BLACK);
+      }
+      else {
+        tft.fillRect(0,smallDateTimeY,w/2,10,ILI9341_BLACK);
+        lastMinutes = minute();
+      }
       if(hour()==0 && minute()==0 && second()==0)
-        tft.fillRect(10,50,w/2,110,ILI9341_BLACK);
+        tft.fillRect(10,smallDateTimeY,w/2,120,ILI9341_BLACK);
       
       sprintf(buffer2,"%02d:%02d:%02d %d/%d/%d",hour(), minute(), second(), month(), day(), year());
       //Serial.println(buffer2);
       buffer2date=true;
-      tft.setCursor(10,50);
+      tft.setCursor(10,smallDateTimeY);
       tft.setTextColor(ILI9341_WHITE);      
       tft.println(buffer2);    
     
@@ -437,8 +453,16 @@ void loop() {
       else
         tft.println("dow error.");
         
-      tft.fillRect(10,160,tft.width(),20,ILI9341_BLACK);
-      tft.setCursor(10,160);
+      if(_lastMinutes==_minutes) {
+        tft.fillRect(tft.width()/2,nobommaY,40,20,ILI9341_BLACK);
+      }
+      else {
+        tft.fillRect(0,nobommaY,tft.width(),20,ILI9341_BLACK);
+        //lastMinutes=minute();
+        _lastMinutes = _minutes;
+      }
+      //tft.show();
+      tft.setCursor(10,nobommaY);
       sprintf(buffer2, "%3lu %02lu:%02lu:%02lu", _days, _hours, _minutes, _seconds );
       tft.print(buffer2);
       tft.setTextSize(1);
@@ -449,8 +473,10 @@ void loop() {
 
       sprintf(leds,"%2d:%02d:%02d",hour(), minute(),second());
       Draw7SegementDigits(10,60,tft.width()*0.75,40,leds,ILI9341_WHITE,true);
+      //lastMinutes = minute();
     }
   }
+  //lastMinutes = minute();
 }
 
 // GYR ----> RYBG
