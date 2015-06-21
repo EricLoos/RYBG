@@ -274,11 +274,25 @@ void SetRow( int row, int bits ) {
     strip.show();
 }
 
+
+time_t tmConvert_t(int YYYY, byte MM, byte DD, byte hh, byte mm, byte ss  )
+{
+  tmElements_t tmSet;
+  tmSet.Year = YYYY - 1970;
+  tmSet.Month = MM;
+  tmSet.Day = DD;
+  tmSet.Hour = hh;
+  tmSet.Minute = mm;
+  tmSet.Second = ss;
+  return makeTime(tmSet);         //convert to time_t
+}
+
+
 int bounce = 0;
 
 void loop() {
   if(millis()>heartbeat1) {
-    heartbeat1 = millis()+350UL;
+    heartbeat1 = millis()+450UL;
     for(int i=0;i<5; i++)
       strip.setPixelColor(4,i,0,0,0);
     strip.setPixelColor(4,bounce%5,10,10,10);
@@ -380,13 +394,15 @@ void loop() {
       
       tft.setCursor(10,50);
       tft.setTextSize(1);
+      /*
       if(buffer2date) {
         tft.setTextColor(ILI9341_BLACK);
         buffer2[8]=0;
         tft.println(buffer2);
       } 
       else
-        tft.fillRect(10,50,w/2,25,ILI9341_BLACK);
+        tft.fillRect(10,50,w/2,25,ILI9341_BLACK);    */
+      tft.fillRect(0,50,w/2,10,ILI9341_BLACK);
       if(hour()==0 && minute()==0 && second()==0)
         tft.fillRect(10,50,w/2,110,ILI9341_BLACK);
       
@@ -397,7 +413,13 @@ void loop() {
       tft.setTextColor(ILI9341_WHITE);      
       tft.println(buffer2);    
     
+      time_t NoBomma = tmConvert_t(2016,11,8,7,0,0);
       time_t t = now();
+      unsigned long seconds = NoBomma-t;
+      unsigned long _days = seconds / ( 60UL * 60UL * 24UL );
+      unsigned long _seconds = seconds % 60UL;
+      unsigned long _minutes = ( seconds / 60UL ) % 60UL ;
+      unsigned long _hours = ( seconds / 3600UL ) % 24UL;
       TimeElements tm;
       breakTime(t, tm);  
       tft.setCursor(10,140);
@@ -414,6 +436,11 @@ void loop() {
       }
       else
         tft.println("dow error.");
+        
+      tft.fillRect(10,160,tft.width(),20,ILI9341_BLACK);
+      tft.setCursor(10,160);
+      sprintf(buffer2, "%3lu %02lu:%02lu:%02lu", _days, _hours, _minutes, _seconds );
+      tft.print(buffer2);
       tft.setTextSize(1);
       sprintf(leds,"%2d-%02d-%02d",month(), day(), year() % 100);
       if(month()<10 && day()<10)
@@ -429,12 +456,14 @@ void loop() {
 // GYR ----> RYBG
 int CorrectBits( int bits ) {
   int r = 0;
-  if((bits & 4)!=0)
-    r+=1;
-  if((bits & 2) != 0)
-    r+=4;
-  if((bits & 1) != 0 )
-    r+=8;
+  if(bits>=0) {
+    if((bits & 4)!=0)
+      r+=1;
+    if((bits & 2) != 0)
+      r+=4;
+    if((bits & 1) != 0 )
+      r+=8;
+  }
   return r; 
 }
 /*
