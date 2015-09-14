@@ -4,7 +4,7 @@
 #include "Adafruit_ILI9341.h"
 #include "Time.h"
 
-#include "Adafruit_WS2801.h"
+//#include "Adafruit_WS2801.h"
 
 // For the Adafruit shield, these are the default.
 #define TFT_DC 9
@@ -15,9 +15,12 @@
 // Use hardware SPI (on Uno, #13, #12, #11) and the above for CS/DC
 Adafruit_ILI9341 tft = Adafruit_ILI9341(TFT_CS, TFT_DC);
 
+/*
 uint8_t dataPin  = 2;    // Yellow wire on Adafruit Pixels
 uint8_t clockPin = 4;
 Adafruit_WS2801 strip = Adafruit_WS2801((uint16_t)5, (uint16_t)5, dataPin, clockPin);
+*/
+
 
 char *dows2[] = {"Sunday", "Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"};
 bool done = false, serialMode = false;
@@ -49,9 +52,9 @@ unsigned long heartbeat1 = 0UL;
 bool heartbeat = false;
 
 void setup() {
-  strip.begin();
+  //strip.begin();
   SetRow(4,15);
-  strip.show();
+  //strip.show();
   heartbeat = false;
   heartbeat1 = millis()+1000UL;
   //heartbeat2 = millis()+1100UL;
@@ -119,10 +122,11 @@ void fillCircles(int bits,uint16_t borderColor) {
   //digitalWrite(ledGreen,LOW); digitalWrite(ledYellow,LOW); digitalWrite(ledRed,LOW);
   //analogWrite(ledGreen,25);  analogWrite(ledYellow,2);  analogWrite(ledRed,2);
   analogWrite(ledGreen,0);  analogWrite(ledYellow,0);  analogWrite(ledRed,0);
+  /*
   for(int i=0;i<3;i++) {
     strip.setPixelColor(0,i,0,0,0);
   }
-  strip.show();
+  strip.show();*/
   //tft.fillRect(0,0,7,7,ILI9341_BLACK);
   int w = tft.width();
   int h = tft.height();
@@ -137,7 +141,7 @@ void fillCircles(int bits,uint16_t borderColor) {
     //tft.fillRect(0,0,7,7,ILI9341_RED);
     //digitalWrite(ledRed,HIGH);
     analogWrite(ledRed,250);
-    strip.setPixelColor(0,0,255,0,0);
+    //strip.setPixelColor(0,0,255,0,0);
   }
   else
     tft.fillCircle(x1,y1,r,ILI9341_BLACK);
@@ -154,7 +158,7 @@ void fillCircles(int bits,uint16_t borderColor) {
     //tft.fillRect(0,0,7,7,ILI9341_YELLOW);
     //digitalWrite(ledYellow,HIGH);
     analogWrite(ledYellow,250);
-    strip.setPixelColor(0,1,50,50,0);
+    //strip.setPixelColor(0,1,50,50,0);
   }
   else
     tft.fillCircle(x2,y2,r,ILI9341_BLACK);
@@ -166,7 +170,7 @@ void fillCircles(int bits,uint16_t borderColor) {
     tft.fillCircle(x3,y3,r,ILI9341_GREEN);
     //digitalWrite(ledGreen,HIGH);
     analogWrite(ledGreen,250);
-    strip.setPixelColor(0,2,0,50,0);
+    //strip.setPixelColor(0,2,0,50,0);
   }
   else
     tft.fillCircle(x3,y3,r,ILI9341_BLACK);
@@ -179,7 +183,7 @@ void fillCircles(int bits,uint16_t borderColor) {
   tft.setTextSize(1);
   tft.println("HFD Replication Status"); 
 
-  strip.show();
+  //strip.show();
 }
 int testBits = 1;
 int repeatCount = 0;
@@ -251,7 +255,7 @@ void SetRow( int row, int bits ) {
   int bit = 1;
   bool changed = false;
   for(int x = 0; x<4; x++) {
-    strip.setPixelColor(x,row,0,0,0);
+    //strip.setPixelColor(x,row,0,0,0);
     if( (bits & bit ) != 0 ) {
       switch(x) {
         case 0: // green
@@ -270,13 +274,14 @@ void SetRow( int row, int bits ) {
           r=50; g=0; b=0;
           break;
       }
-      strip.setPixelColor(x,row,r,g,b);
+      //strip.setPixelColor(x,row,r,g,b);
       changed = true;
     }
     bit = bit << 1;
   }
+  /*
   if(changed)
-    strip.show();
+    strip.show();*/
 }
 
 
@@ -298,14 +303,17 @@ int lastMinutes = -1;
 unsigned long _lastMinutes = 0UL;
 int nobommaY = 170;
 int smallDateTimeY = 40;
+bool WhiteLED = false;
+int LastBits = 0;
 
 void loop() {
   if(millis()>heartbeat1) {
     heartbeat1 = millis()+550UL;
+    /*
     for(int i=0;i<5; i++)
       strip.setPixelColor(4,i,0,0,0);
     strip.setPixelColor(4,bounce%5,10,10,10);
-    strip.show();
+    strip.show();*/
     bounce++;
     if(bounce>100)
       SetRow(4,0);
@@ -365,7 +373,7 @@ void loop() {
   
   if(done) {
     bits = SetLightFromBuffer();
-    
+    LastBits = bits;
     if(bits>=0) {
       SetRow(3,CorrectBits(bits));
       Millis12 = millis()+12*60*1000UL;
@@ -400,6 +408,7 @@ void loop() {
       fillCircles(0,ILI9341_WHITE);
     }
     if(millis()>NextMillis) {
+      WhiteLED = !WhiteLED;
       NextMillis = millis()+333UL;
       
       tft.setCursor(10,50);
@@ -474,6 +483,15 @@ void loop() {
       sprintf(leds,"%2d:%02d:%02d",hour(), minute(),second());
       Draw7SegementDigits(10,60,tft.width()*0.75,40,leds,ILI9341_WHITE,true);
       //lastMinutes = minute();
+      if(WhiteLED) {
+        if( (LastBits & 1) != 0 ) {
+          digitalWrite(ledHeartbeat,HIGH);
+        }
+        else
+          digitalWrite(ledHeartbeat,LOW);
+      }
+      else
+        digitalWrite(ledHeartbeat,LOW);
     }
   }
   //lastMinutes = minute();
