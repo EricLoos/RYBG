@@ -222,9 +222,9 @@ int SetLightFromBuffer() {
         //setTime(GetInt(6,2),GetInt(8,2),GetInt(10,2),GetInt(4,2),GetInt(2,2),GetInt(0,2) );
         buffer[12] = 0;
         setTime(hours, minutes, seconds, days, months, years);
-        //Serial.println(buffer);
+        Serial.println(buffer);
         sprintf(buffer2,"%02d:%02d:%02d %d/%d/%d",hours, minutes, seconds, months, days, years);
-        //Serial.println(buffer2);
+        Serial.println(buffer2);
         
         buffer[0]=0;
         buffer[1]=0;
@@ -373,8 +373,9 @@ void loop() {
   
   if(done) {
     bits = SetLightFromBuffer();
-    LastBits = bits & 0xFF;
+    
     if(bits>=0) {
+      LastBits = bits;
       SetRow(3,CorrectBits(bits));
       Millis12 = millis()+12*60*1000UL;
       fillCircles(bits,ILI9341_WHITE);
@@ -484,15 +485,8 @@ void loop() {
       Draw7SegementDigits(10,60,tft.width()*0.75,40,leds,ILI9341_WHITE,true);
       //lastMinutes = minute();
       if(WhiteLED) {
-        if( ( LastBits & 0xF8 ) == 0 ) {
-          if( (LastBits & 1) != 0 ) {
-            digitalWrite(ledHeartbeat,HIGH);
-Serial.print(bits);
-Serial.print("===");            
-Serial.println(LastBits);
-          }
-          else
-            digitalWrite(ledHeartbeat,LOW);
+        if( (LastBits & 1) != 0 ) {
+          digitalWrite(ledHeartbeat,HIGH);
         }
         else
           digitalWrite(ledHeartbeat,LOW);
