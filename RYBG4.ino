@@ -374,7 +374,7 @@ void loop() {
   if(done) {
     bits = SetLightFromBuffer();
     
-    if(bits>=0) { // -1 means that the winforms app send the time.
+    if(bits>=0) { // -1 means that the winforms app sent the time.
       LastBits = bits;
       SetRow(3,CorrectBits(bits));
       Millis12 = millis()+12*60*1000UL;
