@@ -484,8 +484,11 @@ void loop() {
       Draw7SegementDigits(10,60,tft.width()*0.75,40,leds,ILI9341_WHITE,true);
       //lastMinutes = minute();
       if(WhiteLED) {
-        if( (LastBits & 1) != 0 ) {
-          digitalWrite(ledHeartbeat,HIGH);
+        if( ( LastBits & 0xF8 ) == 0 ) {
+          if( (LastBits & 1) != 0 )
+            digitalWrite(ledHeartbeat,HIGH);
+          else
+            digitalWrite(ledHeartbeat,LOW);
         }
         else
           digitalWrite(ledHeartbeat,LOW);
