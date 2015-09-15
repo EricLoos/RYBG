@@ -373,7 +373,7 @@ void loop() {
   
   if(done) {
     bits = SetLightFromBuffer();
-    LastBits = bits;
+    LastBits = bits & 0xFF;
     if(bits>=0) {
       SetRow(3,CorrectBits(bits));
       Millis12 = millis()+12*60*1000UL;
