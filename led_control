@@ -1,0 +1,320 @@
+#include "LedControl.h"
+#include "Time.h"
+
+
+#define bufferSize 20
+
+#define pinRed 2
+#define pinYellow 3
+#define pinBlue 4
+#define pinGreen 5
+
+  LedControl lc1=LedControl(12,11,10,4); 
+  
+char buffer[bufferSize];
+char buffer2[bufferSize];
+
+//unsigned long sec10 = 0;
+
+int lastMonth,lastDay ,lastYear ;
+char *dows2[] = {"Sunday", "Monday","Tuesday","Wednsday","Thursday","Friday","Saturday"};
+int dp = 128, a=64, b=32, c=16, d=8, e=4, f=2, g=1;
+int letters[] = {((a|b|c|d|e|g)<<8)+'A', ((b|c|d|e|g)<<8)+'D', ((a|b|d|e|f|g)<<8)+'E',
+((a|e|f|g)<<8)+'F',((c|e|f|g)<<8)+'H',(e<<8)+'I',((a|b|c|e|f)<<8)+'M',((c|e|g)<<8)+'N',
+((c|d|e|g)<<8)+'O',((e|g)<<8)+'R',((a|c|d|f|g)<<8)+'S',((d|e|f|g)<<8)+'T',((c|d|e)<<8)+'U',
+((b|c|d|e|f)<<8)+'W',((b|c|d|f|g)<<8)+'Y',((a|b|c|f)<<8)+'7'
+};
+int rotates[] = {a|d,e|b,c|f,};
+void print(int device, char *s ) {
+  lc1.clearDisplay(device);
+  int l = strlen(s);
+  if(l>8)
+     l = 8; 
+  for(int i=0; i<l; i++)
+    setChar(device,7-i, s[i],false);
+}
+void setChar(int device, int pos, char ch, bool dp ) {
+  int bits=0;
+  ch = toupper(ch);
+  for(int i=0;i<sizeof(letters)/sizeof(int); i++) {
+    if(ch == (letters[i] & 255) ) {
+      bits = (letters[i]>>8);
+      break;
+    }
+  }
+  if (bits!=0) {
+    if(dp)
+      bits = bits | 128;
+    lc1.setRow(device,pos,bits);
+  }
+  else  
+    lc1.setChar(device,pos,ch,dp);
+}
+void setup() {
+  SetTime();
+  pinMode(pinRed,OUTPUT);  
+  pinMode(pinYellow,OUTPUT);
+  pinMode(pinBlue,OUTPUT);
+  pinMode(pinGreen,OUTPUT);
+  ClearLEDs();
+  for(int i=0;i<4;i++) {
+    digitalWrite(pinRed+i,HIGH);
+  }
+  delay(1000);
+  ClearLEDs();
+  delay(1000);
+  for(int i=0;i<4;i++) {
+    digitalWrite(pinRed+i,HIGH);
+    delay(250);
+    ClearLEDs();
+  }  
+  ClearLEDs();
+  /*
+  for(int i=0;i<4;i++)
+    digitalWrite(pinRed+i,LOW);
+    */
+  lastMonth = 0; lastDay = 0; lastYear = 0;
+  //sec10 = 0;
+  // put your setup code here, to run once:
+  //time.
+  //RTC.begin(DateTime(__DATE__, __TIME__));
+  Serial.begin(9600);
+  Serial.println(__DATE__);
+  Serial.println(__TIME__);
+  //SetTime();
+  //setTime(DateTime(__DATE__,__TIME__));
+  lc1.shutdown(0,false);
+  lc1.setIntensity(0,8);
+  lc1.clearDisplay(0);
+  for(int i=0;i<8;i++)
+    lc1.setChar(0,7-i,i+'1',false);
+  lc1.setChar(0,2,'-',false);  
+  lc1.setChar(0,5,'-',false);  
+   
+  lc1.shutdown(1,false);
+  lc1.setIntensity(1,8);
+  lc1.clearDisplay(1);  
+  bool b = false;
+  for(int i=0; i<8; i++) {
+    b = false;
+    if( i==3)
+      b = true;
+    lc1.setChar(1,7-i,i+'0',b);
+  }
+    
+    
+  b = false;
+  lc1.shutdown(2,false);
+  lc1.setIntensity(2,8);
+  lc1.clearDisplay(2);  
+  for(int i=0; i<8; i++)  {
+    b=false;
+    if(i==3)
+      b=true;
+    lc1.setChar(2,7-i,i+'2',b);   
+  } 
+  lc1.shutdown(3,false); lc1.setIntensity(3,8); lc1.clearDisplay(3);
+  print(3,"EricLoos");
+  lc1.setRow(3,3,d|e|f);
+  lc1.setRow(3,7,a|d|e|f|g);
+  delay(2000);
+  lc1.clearDisplay(0);
+  //lc1.setChar(0,0,'0',true);
+  int bits = 1;
+  for(int i=0; i<8; i++) {
+    lc1.setRow(0,i,bits);
+    bits = bits << 1;
+  }
+  delay(1000);
+  //print(0, "ADEFHIMN");
+  //print(0,"ORSTUWY7");
+  //print(0,"Wednsday");
+  //delay(500);
+  //print(0,"Friday");
+  //delay(500);
+  for(int i=0;i<7;i++){
+    ClearLEDs();
+    if(i<4) {
+      digitalWrite(pinRed+i,HIGH);
+    }
+    print(0,dows2[i]);
+    delay(3000);
+  }
+}
+void ClearLEDs() {
+  for(int i=0;i<4;i++) {
+    digitalWrite(pinRed+i,LOW);
+  }
+}
+//char buffer[20];
+void SetTime() {
+  strcpy(buffer,__TIME__);
+      int hours = GetInt(0,2);
+      int minutes = GetInt(3,2);
+      int seconds = GetInt(6,2);
+      strcpy(buffer,__DATE__);
+      int days = GetInt(4,2);
+      int years = GetInt(7,4);  
+      buffer[3]=0;
+      int months = GetMonthInt(buffer);
+      Serial.print("Month = ");
+      Serial.print(months);
+      Serial.print("; Text = ");
+      Serial.println(buffer);
+  setTime(hours, minutes, seconds, days, months, years%100);
+  
+          sprintf(buffer2,"%02d:%02d:%02d %d/%d/%d",hours, minutes, seconds, months, days, years%100);
+        Serial.println(buffer2);
+}
+int GetInt(int f, int l ) {
+  int r=0;
+  char ch;
+  for(int i=0;i<l;i++) {
+    r *= 10;
+    ch = buffer[i+f];
+    if(ch==' ')
+      ch = '0';
+    r += ch-'0';
+  }
+  return r;
+}
+int GetMonthInt(char *s) {
+  int r = 1;
+  
+  if(strcmp(s,"Jan")==0)
+    r = 1;   
+  if(strcmp(s,"Feb")==0)
+    r = 2;   
+  if(strcmp(s,"Mar")==0)
+    r = 3;   
+  if(strcmp(s,"Apr")==0)
+    r = 4;   
+  if(strcmp(s,"May")==0)
+    r = 5;   
+  if(strcmp(s,"Jun")==0)
+    r = 6;
+  if(strcmp(s,"Jul")==0)
+    r = 7;   
+  if(strcmp(s,"Aug")==0)
+    r = 8;   
+  if(strcmp(s,"Sep")==0)
+    r = 9;
+   
+  if(strcmp(s,"Oct")==0)
+    r = 10;
+   
+  if(strcmp(s,"Nov")==0)
+    r = 11;
+   
+  if(strcmp(s,"Dec")==0)
+    r = 12;
+   
+    
+  return r;
+}
+char buff[9];
+bool blinkColon = true;
+bool rotateColon=false;
+//int rotate = 0;
+
+void loop() {
+  char ch;
+  if((millis() % 2000)>1900 )
+    digitalWrite(pinGreen,LOW);
+  else
+    digitalWrite(pinGreen,HIGH);
+  // put your main code here, to run repeatedly:
+  //delay(3000);
+  /*
+  for(unsigned long i=0; i<10000UL; i++) {
+    print(i+50000UL);
+    
+      sprintf(buffer2,"%02d:%02d:%02d %d/%d/%d",hour(), minute(), second(), month(), day(), year());
+        Serial.println(buffer2);
+  }
+  */
+  sprintf(buffer2,"%2d=%02d=%02d",hour(),minute(),second());
+  bool dp = false;
+  for(int i=0; i<8; i++) {
+    dp = false;
+    if(i==((minute()*60+second())%8)) {
+      dp = true;
+    }
+    dp = false;
+    ch = buffer2[i];
+    if(ch=='=') {
+      if(blinkColon)  {
+        if(millis()%1200UL>=200UL)  
+          if( dp )
+            lc1.setRow(1,7-i,128);
+          else       
+            lc1.setRow(1,7-i,0);
+        else {
+      //else {
+        if(dp) {
+          if(rotateColon)
+            lc1.setRow(1,7-i,rotates[second()%3]|128);            
+          else
+            lc1.setRow(1,7-i,a|d|128);
+        }
+        else {
+          if(rotateColon)
+            lc1.setRow(1,7-i,rotates[second()%3]);            
+          else
+            lc1.setRow(1,7-i,a|d);
+        }
+      }
+      //}
+      }
+    }
+    else
+      setChar(1,7-i,ch,dp);
+  }
+  if(second()==5 ) {
+    ClearLEDs();
+    for(int i=0; i<3; i++) {
+      digitalWrite(pinRed+i,HIGH);
+      delay(200);
+      ClearLEDs();
+    }
+  }
+  if(month()!=lastMonth || day()!=lastDay || year()!=lastYear ) {
+    sprintf(buffer2,"%d-%d-%d   ",month(),day(),year());
+    if(month()>9 || day()>9 )
+      sprintf(buffer2,"%2d-%02d-%02d",month(),day(),year()%100);
+      /*
+    for(int i=0; i<8; i++)
+      lc1.setChar(2,7-i,buffer2[i],false);    */
+    print(2,buffer2);
+    lastMonth = month(); lastDay = day(); lastYear = year();
+      time_t t = now();
+      TimeElements tm;
+      breakTime(t, tm);  
+      
+      int dow = tm.Wday-1;
+      if(dow>=0 && dow<=6) {
+        sprintf(buffer2,"%8s",dows2[dow]);
+        print(0,buffer2);
+      }
+  } /*
+  sec10++;
+  if(sec10>=10) {
+    sec10 = 0;
+  } 
+  if(sec10<=1) {
+    lc1.setRow(1,2,0);
+    lc1.setRow(1,5,0);
+  } 
+  delay(100);*/
+}
+void print(unsigned long i) {
+  sprintf(buff,"%8ul",i); 
+  bool b = false;
+  for(int i=0;i<8;i++) {
+    b = false;
+    if(i==7 || i==0)
+      b = true;
+    setChar(0,7-i,buff[i],b);
+  }
+  //delay(250);
+}
