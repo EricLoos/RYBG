@@ -10,7 +10,8 @@
 #define pinGreen 5
 
   LedControl lc1=LedControl(12,11,10,4); 
-  
+
+char serBuffer[bufferSize];
 char buffer[bufferSize];
 char buffer2[bufferSize];
 
@@ -218,6 +219,7 @@ bool rotateColon=false;
 //int rotate = 0;
 
 void loop() {
+  SetLEDs();
   char ch;
   if((millis() % 2000)>1900 )
     digitalWrite(pinGreen,LOW);
@@ -270,14 +272,20 @@ void loop() {
     else
       setChar(1,7-i,ch,dp);
   }
-  if(second()==5 ) {
-    ClearLEDs();
-    for(int i=0; i<3; i++) {
-      digitalWrite(pinRed+i,HIGH);
-      delay(200);
-      ClearLEDs();
-    }
+  //SetLEDs();
+  /*
+  if(second()>0 && second()<4 ) {
+    ClearLEDs();    
+    digitalWrite(pinRed+second()-1,HIGH);
   }
+  else if( second()==30) {
+    digitalWrite(pinRed,HIGH); 
+    digitalWrite(pinYellow,HIGH);
+    digitalWrite(pinBlue,HIGH); 
+  }
+  else
+    ClearLEDs();
+    */
   if(month()!=lastMonth || day()!=lastDay || year()!=lastYear ) {
     sprintf(buffer2,"%d-%d-%d   ",month(),day(),year());
     if(month()>9 || day()>9 )
@@ -306,6 +314,84 @@ void loop() {
     lc1.setRow(1,5,0);
   } 
   delay(100);*/
+}
+bool done = false;
+bool serialMode = false;
+int bufferPos = 0;
+void SetLEDs() {
+  int chr = 0;
+  if(Serial.available()>0)  {
+    chr = Serial.read();
+    if(chr<' ') {
+      if(bufferPos==0)
+        ClearLEDs();
+      bufferPos = 0;
+    }
+    else {
+      bufferPos++;
+      if(chr=='R' || chr=='r')
+        digitalWrite(pinRed,HIGH);
+      if(chr=='Y' || chr=='y')
+        digitalWrite(pinYellow,HIGH);
+      if(chr=='B' || chr=='b')
+        digitalWrite(pinBlue,HIGH);
+    }
+  }
+  /*
+  serialMode = false;
+  int size = 0;
+  char ch = 0;
+  char chr = ' ';
+  if(Serial.available()>0) {
+    serialMode = true;
+    chr = Serial.read();
+    if(chr<0) {
+      done = true;
+      ClearLEDs();
+    }
+    serBuffer[bufferPos] = chr;    
+    bufferPos++;    
+  }  
+  if(chr=='\n')
+    done = true;
+  if(chr=='\r')
+    done = true;
+  if(bufferPos>=bufferSize)
+    done = true;
+
+  if(done) {
+    //ClearLEDs();
+    size = 0;
+    for(int i=0; i<bufferSize; i++) {
+      ch = serBuffer[i];
+      if(ch<=0)
+        break;
+      if(ch=='\n' || ch=='\r')
+        break;
+  
+      if(ch=='R' || ch=='r')  {
+        digitalWrite(pinRed,HIGH);
+        size++;
+      }
+      if(ch=='Y' || ch=='y')  {
+        digitalWrite(pinYellow,HIGH);
+        size++;
+      }
+      if(ch=='B' || ch=='b' ) {
+        digitalWrite(pinBlue,HIGH);
+        size++;
+      }
+      if(ch=='g' || ch=='G') {
+        size++;
+      }      
+    }  
+    if(bufferPos<=0 && size==0 && serialMode)
+      ClearLEDs();  
+    bufferPos = 0;
+  }
+  //done = false;
+  //bufferPos = 0;
+  */
 }
 void print(unsigned long i) {
   sprintf(buff,"%8ul",i); 
