@@ -318,6 +318,9 @@ void loop() {
 bool done = false;
 bool serialMode = false;
 int bufferPos = 0;
+int LastChr = '0';
+int dec = 0;
+int TimeArray[] = {0,0,0,0,0,0,0};
 void SetLEDs() {
   int chr = 0;
   if(Serial.available()>0)  {
@@ -328,14 +331,40 @@ void SetLEDs() {
       bufferPos = 0;
     }
     else {
+      chr = toupper(chr);
       bufferPos++;
-      if(chr=='R' || chr=='r')
+      if(chr=='R')
         digitalWrite(pinRed,HIGH);
-      if(chr=='Y' || chr=='y')
+      if(chr=='Y' )
         digitalWrite(pinYellow,HIGH);
-      if(chr=='B' || chr=='b')
+      if(chr=='B' )
         digitalWrite(pinBlue,HIGH);
+      if(chr>='0' && chr<='9' ) {
+         if(LastChr>='0' && LastChr<='9' ) {
+            if( (bufferPos % 2 ) == 0  && bufferPos>0  )  {
+              dec = ( LastChr-'0' )*10 + chr-'0';
+              TimeArray[bufferPos/2-1] = dec;
+              if(bufferPos>=12) {
+                // setTime(hours, minutes, seconds, days, months, years);
+                setTime(TimeArray[3], TimeArray[4], TimeArray[5],
+                    TimeArray[2], TimeArray[1], TimeArray[0] ); 
+                    // YYMMDDHHMMSS  = 150525163155
+                    for(int i=0;i<6;i++)  {
+                      Serial.print(TimeArray[i]);
+                      Serial.print(", ");
+                    }
+                    Serial.println("");
+              }
+            }
+         }
+      }
+      if(chr=='G') {
+        if(bufferPos==1)
+          ClearLEDs();
+      
+      }
     }
+    LastChr = chr;
   }
   /*
   serialMode = false;
