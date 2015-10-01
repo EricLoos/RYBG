@@ -51,8 +51,12 @@ void setChar(int device, int pos, char ch, bool dp ) {
   else  
     lc1.setChar(device,pos,ch,dp);
 }
+
+unsigned long Timeout = 0;
+
 void setup() {
   SetTime();
+  Timeout = millis();
   pinMode(pinRed,OUTPUT);  
   pinMode(pinYellow,OUTPUT);
   pinMode(pinBlue,OUTPUT);
@@ -218,13 +222,19 @@ bool blinkColon = true;
 bool rotateColon=false;
 //int rotate = 0;
 
+unsigned long min12 = 12*60000;
+
 void loop() {
   SetLEDs();
   char ch;
-  if((millis() % 2000)>1900 )
+  if( (millis() - Timeout ) > min12 )
     digitalWrite(pinGreen,LOW);
-  else
-    digitalWrite(pinGreen,HIGH);
+  else { 
+    if((millis() % 2000)>1900 )
+      digitalWrite(pinGreen,LOW);
+    else
+      digitalWrite(pinGreen,HIGH);
+  }
   // put your main code here, to run repeatedly:
   //delay(3000);
   /*
@@ -325,6 +335,7 @@ void SetLEDs() {
   int chr = 0;
   if(Serial.available()>0)  {
     chr = Serial.read();
+    Timeout = millis();
     if(chr<' ') {
       if(bufferPos==0)
         ClearLEDs();
@@ -361,7 +372,6 @@ void SetLEDs() {
       if(chr=='G') {
         if(bufferPos==1)
           ClearLEDs();
-      
       }
     }
     LastChr = chr;
