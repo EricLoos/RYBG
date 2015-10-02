@@ -14,6 +14,7 @@
 char serBuffer[bufferSize];
 char buffer[bufferSize];
 char buffer2[bufferSize];
+char preBuff[bufferSize];
 
 //unsigned long sec10 = 0;
 
@@ -298,8 +299,18 @@ void loop() {
     */
   if(month()!=lastMonth || day()!=lastDay || year()!=lastYear ) {
     sprintf(buffer2,"%d-%d-%d   ",month(),day(),year());
-    if(month()>9 || day()>9 )
-      sprintf(buffer2,"%2d-%02d-%02d",month(),day(),year()%100);
+    if(month()<10 && day()<10 ) {
+      
+    }
+    else {  /*
+      if(month()>9 || day()>9 )   {
+        sprintf(buffer2,"%2d-%02d-%02d",month(),day(),year()%100);
+      }
+      else { */
+        sprintf(preBuff,"%d-%d-%02d",month(),day(),year()%100);
+        sprintf(buffer2,"%8s",preBuff);
+      //}
+    }
       /*
     for(int i=0; i<8; i++)
       lc1.setChar(2,7-i,buffer2[i],false);    */
