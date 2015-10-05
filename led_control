@@ -11,6 +11,9 @@
 
   LedControl lc1=LedControl(12,11,10,4); 
 
+int ledBufferPos = 0;
+char ledBuffer2[bufferSize];
+char ledBuffer[bufferSize];
 char serBuffer[bufferSize];
 char buffer[bufferSize];
 char buffer2[bufferSize];
@@ -24,7 +27,7 @@ int dp = 128, a=64, b=32, c=16, d=8, e=4, f=2, g=1;
 int letters[] = {((a|b|c|d|e|g)<<8)+'A', ((b|c|d|e|g)<<8)+'D', ((a|b|d|e|f|g)<<8)+'E',
 ((a|e|f|g)<<8)+'F',((c|e|f|g)<<8)+'H',(e<<8)+'I',((a|b|c|e|f)<<8)+'M',((c|e|g)<<8)+'N',
 ((c|d|e|g)<<8)+'O',((e|g)<<8)+'R',((a|c|d|f|g)<<8)+'S',((d|e|f|g)<<8)+'T',((c|d|e)<<8)+'U',
-((b|c|d|e|f)<<8)+'W',((b|c|d|f|g)<<8)+'Y',((a|b|c|f)<<8)+'7'
+((b|c|d|e|f)<<8)+'W',((b|c|d|f|g)<<8)+'Y',((a|b|c|f)<<8)+'7',((a|b|f|g)<<8)+176,((a|b|f|g)<<8)+1
 };
 int rotates[] = {a|d,e|b,c|f,};
 void print(int device, char *s ) {
@@ -32,12 +35,51 @@ void print(int device, char *s ) {
   int l = strlen(s);
   if(l>8)
      l = 8; 
-  for(int i=0; i<l; i++)
-    setChar(device,7-i, s[i],false);
+  bool dp;
+  int j = 0;
+  if(HasDP(s)) {
+    for(int i=0; i<10; i++)
+      ledBuffer2[i] = 0;
+    int k = 0;
+    for(int i=0; i<l; i++) {
+      if(s[i]=='.') {
+        j++;
+        ledBuffer2[i-1] = ledBuffer2[i-1] | 128;
+      }
+      else
+        k++;
+      ledBuffer2[i] = s[j];
+      j++;
+    }
+    ledBuffer2[k]=0;
+    bool b;
+    for(int i=0; i<l; i++) {
+      if((ledBuffer2[i] & 127) != 0 ) {
+          b = (ledBuffer2[i] & 128 ) != 0;
+          setChar(device, 7-i, ledBuffer2[i] & 127, b);
+      }
+    }
+  }
+  else {
+    for(int i=0; i<l; i++) {
+      setChar(device,7-i,s[i],false);
+    }
+  }
+}
+bool HasDP(char *s) {
+  bool r = false;
+  for(int i=0; i<strlen(s); i++) {
+    if(s[i]=='.') {
+      r = true;
+      break;
+    }
+  }
+  return r;
 }
 void setChar(int device, int pos, char ch, bool dp ) {
   int bits=0;
-  ch = toupper(ch);
+  if(ch!=176)
+    ch = toupper(ch);
   for(int i=0;i<sizeof(letters)/sizeof(int); i++) {
     if(ch == (letters[i] & 255) ) {
       bits = (letters[i]>>8);
@@ -54,9 +96,12 @@ void setChar(int device, int pos, char ch, bool dp ) {
 }
 
 unsigned long Timeout = 0;
+bool modeText = false;
 
 void setup() {
   SetTime();
+  modeText = false;
+  ledBufferPos = 0;
   Timeout = millis();
   pinMode(pinRed,OUTPUT);  
   pinMode(pinYellow,OUTPUT);
@@ -347,42 +392,60 @@ void SetLEDs() {
   if(Serial.available()>0)  {
     chr = Serial.read();
     Timeout = millis();
-    if(chr<' ') {
+    if(chr<' ' && chr!=1) {
       if(bufferPos==0)
         ClearLEDs();
       bufferPos = 0;
+      if(modeText) {
+        ledBuffer[ledBufferPos] = 0;
+        print(3,ledBuffer);
+      }
+      ledBufferPos  = 0;
+      modeText=false;
     }
     else {
-      chr = toupper(chr);
-      bufferPos++;
-      if(chr=='R')
-        digitalWrite(pinRed,HIGH);
-      if(chr=='Y' )
-        digitalWrite(pinYellow,HIGH);
-      if(chr=='B' )
-        digitalWrite(pinBlue,HIGH);
-      if(chr>='0' && chr<='9' ) {
-         if(LastChr>='0' && LastChr<='9' ) {
-            if( (bufferPos % 2 ) == 0  && bufferPos>0  )  {
-              dec = ( LastChr-'0' )*10 + chr-'0';
-              TimeArray[bufferPos/2-1] = dec;
-              if(bufferPos>=12) {
-                // setTime(hours, minutes, seconds, days, months, years);
-                setTime(TimeArray[3], TimeArray[4], TimeArray[5],
-                    TimeArray[2], TimeArray[1], TimeArray[0] ); 
-                    // YYMMDDHHMMSS  = 150525163155
-                    for(int i=0;i<6;i++)  {
-                      Serial.print(TimeArray[i]);
-                      Serial.print(", ");
-                    }
-                    Serial.println("");
-              }
-            }
-         }
+      
+      if(modeText) {
+        ledBuffer[ledBufferPos] = chr;
+        ledBufferPos++;
       }
-      if(chr=='G') {
-        if(bufferPos==1)
-          ClearLEDs();
+      else {
+        chr = toupper(chr);
+        bufferPos++;
+        if(chr=='R')
+          digitalWrite(pinRed,HIGH);
+        if(chr=='Y' )
+          digitalWrite(pinYellow,HIGH);
+        if(chr=='B' )
+          digitalWrite(pinBlue,HIGH);
+        if(chr=='"' ) {
+          modeText = true;
+        }
+        else {
+          if(chr>='0' && chr<='9' ) {
+             if(LastChr>='0' && LastChr<='9' ) {
+                if( (bufferPos % 2 ) == 0  && bufferPos>0  )  {
+                  dec = ( LastChr-'0' )*10 + chr-'0';
+                  TimeArray[bufferPos/2-1] = dec;
+                  if(bufferPos>=12) {
+                    // setTime(hours, minutes, seconds, days, months, years);
+                    setTime(TimeArray[3], TimeArray[4], TimeArray[5],
+                        TimeArray[2], TimeArray[1], TimeArray[0] ); 
+                        // YYMMDDHHMMSS  = 150525163155
+                        for(int i=0;i<6;i++)  {
+                          Serial.print(TimeArray[i]);
+                          Serial.print(", ");
+                        }
+                        Serial.println("");
+                  }
+                }
+             }
+          }
+        }
+        if(chr=='G') {
+          if(bufferPos==1)
+            ClearLEDs();
+        }
       }
     }
     LastChr = chr;
