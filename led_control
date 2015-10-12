@@ -62,7 +62,8 @@ void print(int device, char *s ) {
   }
   else {
     for(int i=0; i<l; i++) {
-      setChar(device,7-i,s[i],false);
+      bool b = (s[i] & 128) != 0;
+      setChar(device,7-i,s[i] & 127, b);
     }
   }
 }
@@ -273,12 +274,16 @@ unsigned long min12 = 12*60000;
 void loop() {
   SetLEDs();
   char ch;
-  if( (millis() - Timeout ) > min12 )
+  if( (millis() - Timeout ) > min12 )  {
     digitalWrite(pinGreen,LOW);
+    //analogWrite(pinGreen,0);
+  }
   else { 
     if((millis() % 2000)>1900 )
+      //analogWrite(pinGreen,0);  
       digitalWrite(pinGreen,LOW);
     else
+      //analogWrite(pinGreen,20);  //
       digitalWrite(pinGreen,HIGH);
   }
   // put your main code here, to run repeatedly:
@@ -398,6 +403,7 @@ void SetLEDs() {
       bufferPos = 0;
       if(modeText) {
         ledBuffer[ledBufferPos] = 0;
+        SerialPrint(ledBuffer);
         print(3,ledBuffer);
       }
       ledBufferPos  = 0;
@@ -516,4 +522,17 @@ void print(unsigned long i) {
     setChar(0,7-i,buff[i],b);
   }
   //delay(250);
+}
+
+
+void SerialPrint ( char *s ) {
+  int l = strlen(s);
+  int c;
+  if(l>bufferSize)
+    l = bufferSize;
+  for(int i=0; i<l; i++){
+    c=s[i];
+    Serial.print(c);
+  }
+  Serial.println("");
 }
